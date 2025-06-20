@@ -6,7 +6,8 @@ interface JobInputProps {
     description?: string;
     icon?: React.ReactNode;
     value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; // Updated type
+    error?: string;
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export const JobInput: React.FC<JobInputProps> = ({
@@ -15,7 +16,8 @@ export const JobInput: React.FC<JobInputProps> = ({
     description,
     icon,
     value,
-    onChange, // Added onChange prop
+    error,
+    onChange,
 }) => {
     const id = useId();
 
@@ -48,6 +50,7 @@ export const JobInput: React.FC<JobInputProps> = ({
                 "
             />
             {icon && <div className="absolute bottom-[0.6rem] right-3">{icon}</div>}
+            {error && <p className="text-red-500 text-[12px] font-medium">{error}</p>}
         </div>
     )
 }
