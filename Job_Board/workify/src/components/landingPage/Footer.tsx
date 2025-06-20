@@ -8,7 +8,7 @@ const Footer = () => {
           <div>
             Logo
           </div>
-          <p>Call now: <span>+919436453536</span></p>
+          <p>Call now: <span>+919876543210</span></p>
           <p>123,Workify Hub, Connaught Place, New Delhi, 110001-India</p>
         </div>
       </div>

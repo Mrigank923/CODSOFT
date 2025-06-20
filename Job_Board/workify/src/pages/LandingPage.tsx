@@ -7,7 +7,7 @@ import Card2 from "../components/landingPage/Card2"
 import Card3 from "../components/landingPage/Card3"
 import { FcGoogle } from "react-icons/fc"
 import { useDispatch, useSelector } from "react-redux"
-import { useNavigate } from "react-router-dom"
+import { Outlet, useNavigate } from "react-router-dom"
 import { useEffect } from "react"
 import { UserState } from "../store/features/auth/UserState"
 import RoleSelection from "../components/profile/RoleSelection"
@@ -27,11 +27,8 @@ const LandingPage = () => {
 
 
   useEffect(() => {
-    if(IsAuthenticated && role ===''){
+    if(IsAuthenticated && role ==='user'){
       dispatch(setIsOpen(true));
-    }
-    if(IsAuthenticated && role !== ''){
-      navigate('/dashboard');
     }
   },[ IsAuthenticated , dispatch , role , navigate ]);
 
@@ -159,6 +156,7 @@ const LandingPage = () => {
           {isRecruiterOpen && <JobDetails/>}
         </div>
       }
+      <Outlet/>
     </div>
   )
 }
