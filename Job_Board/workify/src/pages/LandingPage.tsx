@@ -1,44 +1,56 @@
-import { FaArrowRight, FaLocationDot, FaRegCircle } from "react-icons/fa6"
+import { FaArrowRight, FaLocationDot, FaRegCircle, FaRegCircleCheck } from "react-icons/fa6"
 import Footer from "../components/landingPage/Footer"
 import Header from "../components/landingPage/Header"
 import { FaSearch } from "react-icons/fa"
 import Card from "../components/landingPage/Card"
 import Card2 from "../components/landingPage/Card2"
-import Card3 from "../components/landingPage/Card3"
-import { FcGoogle } from "react-icons/fc"
 import { useDispatch, useSelector } from "react-redux"
-import { Outlet, useNavigate } from "react-router-dom"
-import { useEffect } from "react"
+import { Link, Outlet, useNavigate } from "react-router-dom"
+import { useEffect, useState } from "react"
 import { UserState } from "../store/features/auth/UserState"
 import RoleSelection from "../components/profile/RoleSelection"
 import CandidateDetails from "../components/profile/CandidateDetails"
 import { RoleSelectionState, setIsOpen } from "../store/features/roleSelection/RoleSelectionSlice"
-import JobDetails from "../components/profile/JobDetails"
+import { getStats, LandingPageState } from "../store/features/LandingPageSlice"
+import { AppDispatch } from "../store/store"
+import RecruiterDetails from "../components/profile/RecruiterDetails"
 
 const LandingPage = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
+
+  const [selectedType , setSelectedType] = useState<string>('Full Time');
+  const [viewAll , setViewAll] = useState<boolean>(false);
+  const [isLocked , setIsLocked] = useState<boolean>(false);
+
+  const handleSelectChange = (selected : string) => {
+    setSelectedType(selected);
+  }
 
   const isOpen = useSelector((state: { roleSelection : RoleSelectionState}) => state.roleSelection.isOpen);
   const isCandidateOpen = useSelector((state: { candidate : {isCandidateOpen : boolean}}) => state.candidate.isCandidateOpen);
   const isRecruiterOpen = useSelector((state: { recruiter : {isRecruiterOpen : boolean}}) => state.recruiter.isRecruiterOpen);
   const IsAuthenticated = useSelector((state: { user : UserState}) => state.user.isAuthenticated);
   const role = useSelector((state: { user : UserState}) => state.user.userData.role);
+  const count = useSelector((state: { landingPage : LandingPageState}) => state.landingPage.count);
 
 
   useEffect(() => {
+    setIsLocked(false);
+    dispatch(getStats())
     if(IsAuthenticated && role ==='user'){
       dispatch(setIsOpen(true));
     }
   },[ IsAuthenticated , dispatch , role , navigate ]);
 
   useEffect(() => {
-    if(isOpen || isCandidateOpen || isRecruiterOpen){
+    if(isOpen || isCandidateOpen || isRecruiterOpen || isLocked){
+      window.scrollTo(0,0);
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = 'auto'
     }
-  },[isOpen ,isCandidateOpen , isRecruiterOpen])
+  },[isOpen ,isCandidateOpen , isRecruiterOpen , isLocked])
 
   return (
     <div className="
@@ -58,9 +70,9 @@ const LandingPage = () => {
               <p>Find jobs that match your interests with us.</p>
               <p>Workify provides a place to find your jobs</p>
             </h3>
-            <div className="flex items-center py-2 border-2 border-[#3C74BB] pl-2 lg:pl-4 pr-2 gap-2 rounded-2xl">
+            <form className="flex items-center py-2 border-2 border-[#3C74BB] pl-2 lg:pl-4 pr-2 gap-2 rounded-2xl" onSubmit={(e) => { e.preventDefault(); setIsLocked(true); }}>
               <div className="p-2 rounded-full bg-[#2B5A9E] text-white hover:opacity-80 cursor-pointer">
-                <FaSearch size={18}/>
+                <FaSearch type="submit" size={18} onClick={() => setIsLocked(true)}/>
               </div>
               <input
                 type="text"
@@ -71,7 +83,7 @@ const LandingPage = () => {
               <button className="flex items-center gap-1 text-[1.1rem] lg:text-xl bg-[#C8D8EF] font-medium text-[#3D3D3D] px-2 py-1 rounded-xl hover:opacity-90">
                 <span><FaLocationDot size={16}/></span>Location
               </button>
-            </div>
+            </form>
             <div className="text-[#474C54] font-medium text-[0.9rem]">
               <span className="text-[#9199A3]">Suggestion: </span>
               <span>Designer</span>,
@@ -81,14 +93,23 @@ const LandingPage = () => {
               <span> Animation</span>.
             </div>
             <div className="flex justify-evenly lg:justify-between gap-2 lg:gap-3 items-center flex-wrap md:flex-nowrap">
-              <button className="bg-[#C8D8EF] text-[#2B5A9E] text-sm lg:text-[1rem] font-medium p-2 md:px-3 md:py-2 rounded-xl flex gap-2 items-center">
-                <FaRegCircle size={20} className="text-[#213E6B]"/>Full Time
+              <button onClick={() => handleSelectChange('Full Time')} className="bg-[#C8D8EF] text-[#2B5A9E] text-sm lg:text-[1rem] font-medium p-2 md:px-3 md:py-2 rounded-xl flex gap-2 items-center">
+                {selectedType === 'Full Time' ?
+                  <FaRegCircleCheck  size={20} className="text-[#213E6B]"/> :
+                  <FaRegCircle  size={20} className="text-[#213E6B]"/>
+                }<span>Full Time</span>
               </button>
-              <button className="bg-[#C8D8EF] text-[#2B5A9E] text-sm lg:text-[1rem] font-medium p-2 md:px-3 md:py-2 rounded-xl flex gap-2 items-center">
-                <FaRegCircle size={20} className="text-[#213E6B]"/>Part Time
+              <button onClick={() => handleSelectChange('Part Time')} className="bg-[#C8D8EF] text-[#2B5A9E] text-sm lg:text-[1rem] font-medium p-2 md:px-3 md:py-2 rounded-xl flex gap-2 items-center">
+                {selectedType === 'Part Time' ?
+                  <FaRegCircleCheck  size={20} className="text-[#213E6B]"/> :
+                  <FaRegCircle  size={20} className="text-[#213E6B]"/>
+                }<span>Part Time</span>
               </button>
-              <button className="bg-[#C8D8EF] text-[#2B5A9E] text-sm lg:text-[1rem] font-medium p-2 md:px-3 md:py-2 rounded-xl flex gap-2 items-center">
-                <FaRegCircle size={20} className="text-[#213E6B]"/>Remote
+              <button onClick={() => handleSelectChange('Remote')} className="bg-[#C8D8EF] text-[#2B5A9E] text-sm lg:text-[1rem] font-medium p-2 md:px-3 md:py-2 rounded-xl flex gap-2 items-center">
+                {selectedType === 'Remote' ?
+                  <FaRegCircleCheck  size={20} className="text-[#213E6B]"/> :
+                  <FaRegCircle  size={20} className="text-[#213E6B]"/>
+                }<span>Remote</span>
               </button>
             </div>
           </div>
@@ -97,44 +118,33 @@ const LandingPage = () => {
           </div>
         </section>
         <section className="my-10">
-          <div className="flex justify-center items-center gap-8 flex-wrap px-2">
-            <Card imageURL="/images/landing-page/briefcase.svg" count={'2,38,324'} description="Live Job"/>
-            <Card imageURL="/images/landing-page/company.svg" count={'97,354'} description="Companies"/>
-            <Card imageURL="/images/landing-page/users.svg" count={'38,47,154'} description="Candidates"/>
-            <Card imageURL="/images/landing-page/briefcase.svg" count={'7,532'} description="New Jobs"/>
-          </div>
+            <div className="flex justify-center items-center gap-8 flex-wrap px-2">
+            <Card imageURL="/images/landing-page/briefcase.svg" count={count.liveJobCount ? (count.liveJobCount+1790).toString() : '2324'} description="Live Job"/>
+            <Card imageURL="/images/landing-page/company.svg" count={count.companiesCount ? (count.companiesCount+7600).toString() : '97354'} description="Companies"/>
+            <Card imageURL="/images/landing-page/users.svg" count={count.candidatesCount ? (count.candidatesCount+7360).toString() : '3847154'} description="Candidates"/>
+            <Card imageURL="/images/landing-page/briefcase.svg" count={count.newJobCount ? (count.newJobCount+3774).toString() : '7532'} description="New Jobs"/>
+            </div>
           <div className="bg-white my-28 ">
             <div className="flex justify-between items-center px-6 lg:px-16 py-10">
               <div className="text-xl lg:text-[2.5rem] font-medium">
                 Popular category
               </div>
-              <button className="text-sm lg:text-[1rem] flex gap-2 text-[#2B5A9E] font-medium py-3 px-8 border border-[#C8D8EF] items-center hover:bg-[#fafafb]">
-                View All <FaArrowRight size={20} className="font-[100] text-[#487ac1]"/>
+              <button className="hidden lg:flex text-sm lg:text-[1rem] gap-2 text-[#2B5A9E] font-medium py-3 px-8 border border-[#C8D8EF] items-center hover:bg-[#fafafb]" onClick={() => setViewAll(prev => !prev)}>
+                {viewAll ? 'View Less': 'View All'}<FaArrowRight size={20} className="font-[100] text-[#487ac1]"/>
               </button>
             </div>
-            <div className="flex justify-evenly items-center px-3 lg:px-16 flex-wrap gap-3 lg:gap-10 pb-20 shadow-md">
-              <Card2 imageURL={'/images/landing-page/pen.png'} title={'Graphics & Design'} description="357 Open position"/>
-              <Card2 imageURL={'/images/landing-page/code.png'} title={'Code & Programing'} description="312 Open position"/>
-              <Card2 imageURL={'/images/landing-page/megaphone.png'} title={'Digital Marketing'} description="297 Open position"/>
-              <Card2 imageURL={'/images/landing-page/monitor.png'} title={'Video & Animation'} description="247 Open position"/>
-              <Card2 imageURL={'/images/landing-page/music.png'} title={'Music & Audio'} description="204 Open position" className={'lg:flex hidden'}/>
-              <Card2 imageURL={'/images/landing-page/chart-bar.png'} title={'Account & Finance'} description="167 Open position" className={'lg:flex hidden'}/>
-              <Card2 imageURL={'/images/landing-page/first-aid.png'} title={'Health & Care'} description="125 Open position" className={'lg:flex hidden'}/>
-              <Card2 imageURL={'/images/landing-page/database.png'} title={'Data & Science'} description="57 Open position" className={'lg:flex hidden'}/>
+            <div className="flex justify-evenly items-center px-3 lg:px-16 flex-wrap gap-3 lg:gap-10 pb-20 shadow-md transition duration-1000">
+              <Card2 imageURL={'/images/landing-page/pen.png'} title={'Graphics & Design'} description=""/>
+              <Card2 imageURL={'/images/landing-page/code.png'} title={'Code & Programing'} description=""/>
+              <Card2 imageURL={'/images/landing-page/megaphone.png'} title={'Digital Marketing'} description=""/>
+              <Card2 imageURL={'/images/landing-page/monitor.png'} title={'Video & Animation'} description=""/>
+              {viewAll && <>
+                <Card2 imageURL={'/images/landing-page/music.png'} title={'Music & Audio'} description="" className={'lg:flex hidden'}/>
+                <Card2 imageURL={'/images/landing-page/chart-bar.png'} title={'Account & Finance'} description="" className={'lg:flex hidden'}/>
+                <Card2 imageURL={'/images/landing-page/first-aid.png'} title={'Health & Care'} description="" className={'lg:flex hidden'}/>
+                <Card2 imageURL={'/images/landing-page/database.png'} title={'Data & Science'} description="" className={'lg:flex hidden'}/>
+              </>}
             </div>
-          </div>
-        </section>
-        <section className="lg:block hidden py-10 my-20 bg-white ">
-          <div className="text-[2.5rem] font-medium px-16 mb-8">
-            Top campanies
-          </div>
-          <div className="flex justify-evenly items-center flex-wrap">
-            <Card3 Icon={FcGoogle} title="Google" location={'Bengaluru,Karnataka'}/>
-            <Card3 imageURL='/images/landing-page/employers-logo.png' title="Google" location={'Bengaluru,Karnataka'} outline/>
-            <Card3 Icon={FcGoogle} title="Google" location={'Bengaluru,Karnataka'}/>
-            <Card3 imageURL='/images/landing-page/employers-logo.png' title="Google" location={'Bengaluru,Karnataka'} outline/>
-            <Card3 Icon={FcGoogle} title="Google" location={'Bengaluru,Karnataka'}/>
-            <Card3 imageURL='/images/landing-page/employers-logo.png' title="Google" location={'Bengaluru,Karnataka'} outline/>
           </div>
         </section>
         <section className="lg:flex items-center gap-10 justify-center w-full hidden">
@@ -149,14 +159,25 @@ const LandingPage = () => {
         </section>
       </main>
       <Footer/>
-      {(isOpen || isCandidateOpen || isRecruiterOpen) &&
+      {(isOpen || isCandidateOpen || isRecruiterOpen || isLocked) &&
         <div className="absolute min-h-screen w-full flex justify-center items-center z-50 bg-neutral-800/80 ">
           {isOpen && <RoleSelection/>}
           {isCandidateOpen && <CandidateDetails/>}
-          {isRecruiterOpen && <JobDetails/>}
+          {isRecruiterOpen && <RecruiterDetails/>}
+          {isLocked && <LockedPage/>}
         </div>
       }
       <Outlet/>
+    </div>
+  )
+}
+
+const LockedPage = () => {
+  return (
+    <div className="bg-white p-10 rounded-xl flex flex-col items-center gap-2">
+      <h1 className="text-2xl font-medium">Finally Last step to have a job.</h1>
+      <h1 className="text-xl text-black/80">Please Register to continue.</h1>
+      <Link to={'/auth/register'} className="mt-4 text-xl hover:opacity-80 text-white font-semibold bg-[#2B5A9E] px-4 py-2 rounded-xl">Sign up</Link>
     </div>
   )
 }

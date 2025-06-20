@@ -13,7 +13,6 @@ import { useRef, useEffect } from "react";
 import { Link , useNavigate } from "react-router-dom";
 import { AppDispatch } from "../../store/store";
 import { setIsAllowed } from "../../store/features/auth/VerifyOTPSlice";
-import { setIsOpen } from "../../store/features/roleSelection/RoleSelectionSlice";
 
 const RegisterPage = () => {
   const navigate = useNavigate();
@@ -33,7 +32,7 @@ const RegisterPage = () => {
   const passwordRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if(isAuthenticated && role === ''){
+    if(isAuthenticated && role === 'USER'){
       navigate('/');
       return;
     }
@@ -50,9 +49,6 @@ const RegisterPage = () => {
         password: password
       }))
       .then((res) => {
-        if(role === ''){
-          dispatch(setIsOpen(true));
-        }
         if(res.type === 'auth/registerUser/fulfilled'){
         dispatch(setIsAllowed(true));
         navigate('/auth/verify');

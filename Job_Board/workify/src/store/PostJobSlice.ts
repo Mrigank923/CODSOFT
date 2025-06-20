@@ -36,13 +36,13 @@ export const postJob = createAsyncThunk('job/postJob', async (jobData: JobState,
   try {
     toast.loading("Posting job...");
     const { title, description, location, experience, jobType, mode, minSalary, maxSalary, employmentType, requiredSkills } = jobData;
-    const token = localStorage.getItem('authToken');
+    const token = localStorage.getItem('token');
     const response = await axios.post('/', {
       title,
       description,
       location,
       experience,
-      jobType,
+      jobType : jobType === "ONLINE" ? "FULL_TIME" : "PART_TIME",
       mode,
       minSalary,
       maxSalary,
@@ -76,6 +76,7 @@ const postJobSlice = createSlice({
     },
     addSkill: (state, action: PayloadAction<string>) => {
       state.requiredSkills.push(action.payload);
+      state.requiredSkills = [...new Set(state.requiredSkills)];
     },
     removeSkill: (state, action: PayloadAction<string>) => {
       state.requiredSkills = state.requiredSkills.filter(skill => skill !== action.payload);

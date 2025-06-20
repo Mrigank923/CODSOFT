@@ -5,11 +5,12 @@ import { useSelector, useDispatch } from "react-redux";
 import { setIsAllowed, setOTP, verifyOTP , verifyForgotOTP, setSendBy } from "../../store/features/auth/VerifyOTPSlice";
 import { AuthState } from "../../store/features/auth/AuthState";
 import { AppDispatch } from "../../store/store";
-import { setIsAuthenticated, setToken, setUserData } from "../../store/features/UserSlice";
 import { registerUser, setContact, setName, setPassword } from "../../store/features/auth/AuthSlice";
 import { useNavigate } from "react-router-dom";
 import { VerifyOTPState } from "../../store/features/auth/VerifyOTPState";
 import { validateContact } from "../../store/features/auth/ForgotPasswordSlice";
+import { setIsOpen } from "../../store/features/roleSelection/RoleSelectionSlice";
+import { setIsAuthenticated, setToken, setUserData } from "../../store/features/UserSlice";
 
 const VerifyOTP = () => {
 
@@ -26,6 +27,7 @@ const VerifyOTP = () => {
     const contact = useSelector((state: { auth: AuthState }) => state.auth.contact);
     const name = useSelector((state: { auth: AuthState }) => state.auth.name);
     const password = useSelector((state: { auth: AuthState }) => state.auth.password);
+    const role = useSelector((state: { user: { userData: { role: string; }; }; }) => state.user.userData.role);
     const sendBy = useSelector((state: { verifyOTP: VerifyOTPState }) => state.verifyOTP.sendBy);
     const contactOfForgot = useSelector((state: { forgot: { contact: string; }; }) => state.forgot.contact);
 
@@ -46,8 +48,11 @@ const VerifyOTP = () => {
         setOtp(newOtp);
         if (value && index < otpRefs.length - 1) {
             otpRefs[index + 1].current?.focus();
+        } else if (!value && index > 0) {
+            otpRefs[index - 1].current?.focus();
         }
     };
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
         if (e.key === 'Backspace' && !otp[index] && index > 0) {
             otpRefs[index - 1].current?.focus();
@@ -60,6 +65,15 @@ const VerifyOTP = () => {
             }
         }
     }
+
+    const handlePaste = (e: React.ClipboardEvent<HTMLFormElement>) => {
+        const pasteData = e.clipboardData.getData('text');
+        if (pasteData.length === otp.length) {
+            const newOtp = pasteData.split('');
+            setOtp(newOtp);
+            otpRefs[otpRefs.length - 1].current?.focus();
+        }
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -77,6 +91,9 @@ const VerifyOTP = () => {
                         dispatch(setContact(''));
                         dispatch(setSendBy('forgot'));
                         navigate('/auth/new-password');
+                        if(role === 'USER'){
+                            dispatch(setIsOpen(true));
+                        }
                     }
                 });
             } else {
@@ -85,20 +102,17 @@ const VerifyOTP = () => {
                     otp: otpValue
                 })).then((res) => {
                     if (res.type === 'verifyOTP/verifyOTP/fulfilled') {
-                        const newUserData = {
-                            firstName: name.split(' ')[0],
-                            lastName: name.split(' ')[1],
-                            contact : contact,
-                            emailVerified: true
-                        }
                         dispatch(setIsAllowed(false));
-                        dispatch(setUserData(newUserData));
-                        dispatch(setIsAuthenticated(true));
-                        dispatch(setToken(res.payload.token));
                         dispatch(setName(''));
                         dispatch(setOTP(''));
                         dispatch(setPassword(''));
                         dispatch(setContact(''));
+                        dispatch(setToken(res.payload.token));
+                        dispatch(setIsAuthenticated(true));
+                        dispatch(setUserData({...res.payload.user , role : res.payload.user.role.toLowerCase()}));
+                        if(role === 'USER'){
+                            dispatch(setIsOpen(true));
+                        }
                     }
                 });
             }
@@ -143,6 +157,7 @@ const VerifyOTP = () => {
     );
 
     useEffect(() => {
+        otpRefs[0].current?.focus();
         if (!isAllowed) {
             if(sendBy === 'forgot'){
                 navigate('/auth/new-password');
@@ -178,7 +193,7 @@ const VerifyOTP = () => {
                 onSubmit={handleSubmit}
                 footer={footer}
             >
-                <form className="flex items-center justify-around gap-2" onSubmit={handleSubmit}>
+                <form className="flex items-center justify-around gap-2" onSubmit={handleSubmit} onPaste={handlePaste}>
                     {otpRefs.map((ref, index) => (
                         <InputOTP
                             key={index}

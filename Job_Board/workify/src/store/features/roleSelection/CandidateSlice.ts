@@ -12,7 +12,7 @@ export interface Candidate {
     degree: string;
     yearOfCompletion: number;
   }[];
-  experiences: {
+  experience: {
     companyName: string;
     yearsWorked: number;
     position: string;
@@ -22,16 +22,20 @@ export interface Candidate {
   resumeKey: string | null;
   profileImageKey: string | null;
   dob: string | null;
+  location: string;
+  domain: string;
 }
 
-interface CandidateState {
+export interface CandidateState {
   isCandidateOpen: boolean;
+  isResumeOpen: boolean;
   candidate: Candidate;
   error: string | null;
 }
 
 const initialState: CandidateState = {
   isCandidateOpen: false,
+  isResumeOpen: false,
   candidate: {
     firstName: '',
     lastName: '',
@@ -44,7 +48,7 @@ const initialState: CandidateState = {
         yearOfCompletion: 2023,
       },
     ],
-    experiences: [
+    experience: [
       {
         companyName: '',
         yearsWorked: 0,
@@ -55,6 +59,8 @@ const initialState: CandidateState = {
     certificate: [],
     resumeKey: null,
     profileImageKey: null,
+    domain: '',
+    location: '',
     dob: null,
   },
   error: null,
@@ -69,7 +75,7 @@ export const getCandidate = createAsyncThunk(
           Authorization: `Bearer ${token}`
         }
       });
-      dispatch(setCandidate(response.data));
+      dispatch(setCandidate({...response.data}));
     } catch (err: unknown) {
       const error = err as AxiosError<{ message: string }>;
       console.log(err);
@@ -107,6 +113,12 @@ export const uploadProfilePic = createAsyncThunk(
 export const uploadResume = createAsyncThunk(
   'roleSelection/uploadResume',
   async ({ token, resumeFile }: { token: string, resumeFile: File }, { rejectWithValue, dispatch }) => {
+    if (resumeFile.type !== 'application/pdf') {
+      return rejectWithValue('Only PDF files are allowed');
+    }
+    if (resumeFile.size > 5 * 1024 * 1024) {
+      return rejectWithValue('File size should be less than 5 MB');
+    }
     const formData = new FormData();
     formData.append('Resume', resumeFile, resumeFile.name);
     try {
@@ -140,7 +152,7 @@ export const updateCandidate = createAsyncThunk(
           degree: candidateData.education[0].degree,
           yearOfCompletion: candidateData.education[0].yearOfCompletion
         }],
-        experiences: candidateData.experiences,
+        experience: candidateData.experience,
         skill: candidateData.skill
       }, {
         headers: {
@@ -164,8 +176,8 @@ const candidateSlice = createSlice({
   initialState,
   reducers: {
     setCandidate(state, action) {
-      state.candidate = action.payload;
-      localStorage.setItem('candidate', JSON.stringify(action.payload));
+      state.candidate = { ...state.candidate , ...action.payload };
+      localStorage.setItem('candidate', JSON.stringify(state.candidate));
     },
     setIsCandidateOpen(state, action) {
       state.isCandidateOpen = action.payload;
@@ -173,6 +185,12 @@ const candidateSlice = createSlice({
     setError(state, action) {
       state.error = action.payload;
     },
+    openResumePage(state) {
+      state.isResumeOpen = true;
+    },
+    closeResumePage(state) {
+      state.isResumeOpen = false
+    }
   },
   extraReducers: (builder) => {
     builder
@@ -192,4 +210,4 @@ const candidateSlice = createSlice({
 });
 
 export default candidateSlice.reducer;
-export const { setCandidate, setIsCandidateOpen, setError } = candidateSlice.actions;
+export const { setCandidate, setIsCandidateOpen, setError, openResumePage , closeResumePage } = candidateSlice.actions;
