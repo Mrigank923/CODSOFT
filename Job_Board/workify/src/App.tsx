@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes} from "react-router-dom";
 import LandingPage from "./pages/LandingPage";
 import AuthPage from "./pages/auth/AuthPage";
 import RegisterPage from "./pages/auth/RegisterPage";
@@ -13,9 +13,15 @@ import Dashboard from "./pages/Home/Dashboard";
 import { AppDispatch } from "./store/store";
 import { activeUser } from "./store/features/UserSlice";
 import { UserState } from "./store/features/auth/UserState";
-import Layout from "./pages/Home/Layout";
 import HomePage from "./pages/Home/HomePage";
-import AllRoutesWithOutLogin from "./pages/AllRoutesWithOutLogin";
+import JobsPage from "./pages/JobsPage";
+import CompanyPage from "./pages/Companies/CompanyPage";
+import LayoutForcandidate from "./pages/LayoutForCandidate";
+import LayoutForRecruiter from "./pages/LayoutForRecruiter";
+import PostJob from "./pages/Home/PostJob";
+import JobDetailsPage from "./components/Jobs/JobDetailsPage";
+import CompanyDetailsPage from "./pages/Companies/CompanyDetailsPage";
+import Profile from "./pages/Profile";
 
 const App = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -31,9 +37,11 @@ const App = () => {
     <>
       <ToastProvider />
       <Routes>
-        {/* Landing page/ not protected  */}
-        {(role ==='') && <Route index element={<LandingPage />} />}
-        {(role ==='') && <Route path="*" element={<AllRoutesWithOutLogin/>} />}
+        {/* Landing page not protected  */}
+        {(role ==='user' || !isAuthenticated) &&
+        <Route path="/" element={<LandingPage />}>
+          <Route path="dashboard" element={<Navigate to="/"/>} />
+        </Route>}
 
         {/* Auth routes  */}
         <Route path="/auth" element={<AuthPage />}>
@@ -44,13 +52,29 @@ const App = () => {
           <Route path="new-password" element={<SetPasswordPage />} />
         </Route>
 
-        {/* Protected routes */}
-        {(role !== '' && isAuthenticated) &&
-          <Route path='/' element={<Layout />}>
-            <Route index element={<HomePage />} />
-            <Route path="dashboard" element={<Dashboard />} />
-          </Route>}
 
+        {/* Protected routes */}
+        {(role === 'candidate' && isAuthenticated) &&
+          <>
+            <Route path='/' element={<LayoutForcandidate />}>
+              <Route index element={<HomePage />} />
+              <Route path="dashboard" element={<Dashboard />} />
+            </Route>
+            <Route path="profile" element={<Profile />}/>
+            <Route path="jobs" element={<JobsPage />}/>
+            <Route path="jobs/:id" element={<JobDetailsPage />} />
+            <Route path="companies" element={<CompanyPage />}/>
+            <Route path="companies/:id" element={<CompanyDetailsPage />}/>
+          </>
+        }
+
+        {(role === 'recruiter' && isAuthenticated) &&
+          <>
+            <Route path='/' element={<LayoutForRecruiter />}/>
+            <Route path='/post-a-job' element={<PostJob />} />
+            <Route path="dashboard" element={<Dashboard />} />
+          </>
+        }
       </Routes>
     </>
   );

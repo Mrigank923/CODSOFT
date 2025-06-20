@@ -1,16 +1,22 @@
 import { useState } from "react";
-import { FaStar, FaCheckCircle } from "react-icons/fa"; // Import FaCheckCircle icon
+import { FaStar, FaCheckCircle } from "react-icons/fa";
 import DialogCard from "./DialogCard"
 import { JobInput } from "./JobInput"
 import { setIsCandidateOpen } from "../../store/features/roleSelection/CandidateSlice";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setUserData } from "../../store/features/UserSlice";
-import { setCandidate } from "../../store/features/roleSelection/RoleSelectionSlice";
+import { createCandidate, RoleSelectionState, setCandidate, uploadResume } from "../../store/features/roleSelection/RoleSelectionSlice";
+import { UserState } from "../../store/features/auth/UserState";
+import { AppDispatch } from "../../store/store";
 
 const CandidateDetails = () => {
 
-    const dispatch = useDispatch();
+    const dispatch = useDispatch<AppDispatch>();
     const [counter, setCounter] = useState(0);
+    const [isLoading , setIsLoading] = useState(false);
+    const userData = useSelector((state: { user: UserState }) => state.user.userData);
+    const token = useSelector((state: { user: UserState }) => state.user.token) as string;
+    const candidate = useSelector((state: { roleSelection: RoleSelectionState }) => state.roleSelection.candidate);
     const [pages, setPages] = useState([
         {
             heading: 'Education',
@@ -50,23 +56,52 @@ const CandidateDetails = () => {
     };
 
     const handleNext = () => {
-        if (counter < pages.length) {
+        if (counter < pages.length - 1) {
             setCounter((prev) => prev + 1);
-        } else {
-            dispatch(setIsCandidateOpen(false));
-            dispatch(setUserData({ role: 'candidate' }));
-            const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-            const resumeFile = fileInput && fileInput.files ? fileInput.files[0] : null;
-            dispatch(setCandidate({
+        } else if (counter === pages.length - 1) {
+            const candidateData = {
+                ...candidate,
                 education: pages[0].inputs[0].value,
                 course: pages[0].inputs[1].value,
                 location: pages[1].inputs[0].value,
                 careerInterests: pages[1].inputs[1].value,
                 companyName: pages[2].inputs[0].value,
                 currentJobTitle: pages[2].inputs[1].value,
-                isResumeUploaded: isResume,
-                resumeFile: resumeFile
-            }));
+                skills: []
+            };
+            dispatch(setCandidate(candidateData));
+            try {
+                setIsLoading(true);
+                dispatch(createCandidate({ candidate: candidateData, token })).then((res) => {
+                    if(res.type === 'roleSelection/createCandidate/fulfilled'){
+                    setCounter(prev => prev + 1);
+                    setIsLoading(false);
+            }});
+            } catch (error) {
+                console.error("Error creating candidate:", error);
+                setIsLoading(false);
+                setCounter(0);
+            }
+        } else {
+            const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+            const resumeFile = fileInput && fileInput.files ? fileInput.files[0] : null;
+            const resumeFileName = resumeFile ? resumeFile.name : null;
+            dispatch(setCandidate({ ...candidate, isResumeUploaded: isResume, resumeFileName: resumeFileName }));
+            try {
+                if (resumeFile) {
+                    setIsLoading(true);
+                    dispatch(uploadResume({ resume: resumeFile, token })).then((res) => {
+                        if(res.type === 'roleSelection/uploadResume/fulfilled'){
+                        dispatch(setIsCandidateOpen(false));
+                        dispatch(setUserData({ ...userData, role: 'candidate' }));
+                        setIsLoading(false);
+                    }});
+                }
+            } catch (error) {
+                console.error("Error uploading resume:", error);
+                setCounter((prev) => prev - 1);
+                setIsLoading(false);
+            }
         }
     };
 
@@ -88,7 +123,7 @@ const CandidateDetails = () => {
                     description="Your next career move is waiting! Let&apos;s fine-tune your profile and get you connected to exciting opportunities tailored just for you."
                     action={handleNext}
                     actionLabel="Proceed"
-                    disabled={!isFormValid()}
+                    disabled={!isFormValid() || isLoading}
                 >
                     <form className="mt-16">
                         <div className="w-full flex gap-2 items-center">
@@ -114,7 +149,7 @@ const CandidateDetails = () => {
                     description="Autocomplete your profile in just a few seconds by uploading a resume."
                     action={handleNext}
                     actionLabel={isResume ? "Complete Profile" : 'Skip'}
-                    disabled={false}
+                    disabled={isLoading}
                 >
                     <div className="w-[90%] mx-auto flex flex-col gap-10 justify-center items-center my-6">
                         {!isResume ? (
@@ -122,7 +157,7 @@ const CandidateDetails = () => {
                         ) : (
                             <div className="flex gap-4 items-center">
                                 <FaCheckCircle className="text-[#2cc655] text-4xl" />
-                                <span className="text-xl">Resume Uploaded</span>
+                                <span className="text-xl">Resume Selected</span>
                             </div>
                         )}
                         <button className="bg-[#2B5A9E] text-[#F3F6FC] font-medium text-xl py-3 w-[350px] rounded-lg hover:opacity-80">
