@@ -1,0 +1,12 @@
+# Node
+backend/node_modules
+backend/.env
+
+# Python
+worker/venv
+worker/__pycache__/
+worker/*.pyc
+worker/.env
+
+# Docker
+*.log

@@ -1,0 +1,5 @@
+FROM python:3.12
+WORKDIR /app
+COPY worker .
+RUN pip install celery redis
+CMD ["celery", "-A", "tasks", "worker", "--loglevel=info"]
